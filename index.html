@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Veer's To-Do App</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      color: #1a1a1a;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 40px;
+      color: #2d2d2d;
+    }
+
+    .container {
+      max-width: 620px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    .section {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .section h2 { font-size: 1.2rem; margin-bottom: 16px; }
+    .section.tasks h2        { color: #2563eb; }
+    .section.ideas h2        { color: #7c3aed; }
+    .section.competitions h2 { color: #ea580c; }
+    .section.finished-box h2 { color: #16a34a; }
+
+    /* --- standard input row (tasks / ideas) --- */
+    .input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .input-row input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .section.tasks .input-row input:focus  { border-color: #2563eb; }
+    .section.ideas .input-row input:focus  { border-color: #7c3aed; }
+
+    .input-row button {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .section.tasks .input-row button       { background: #2563eb; color: #fff; }
+    .section.tasks .input-row button:hover { background: #1d4ed8; }
+    .section.ideas .input-row button       { background: #7c3aed; color: #fff; }
+    .section.ideas .input-row button:hover { background: #6d28d9; }
+
+    /* --- competition input row --- */
+    .comp-input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .comp-input-row input[type="text"] {
+      flex: 1;
+      min-width: 160px;
+      padding: 10px 14px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .comp-input-row input[type="text"]:focus { border-color: #ea580c; }
+
+    .comp-input-row input[type="date"] {
+      padding: 10px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+      color: #555;
+      transition: border-color 0.2s;
+    }
+
+    .comp-input-row input[type="date"]:focus { border-color: #ea580c; }
+
+    .comp-input-row button {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: #ea580c;
+      color: #fff;
+      transition: background 0.2s;
+    }
+
+    .comp-input-row button:hover { background: #c2410c; }
+
+    /* --- main list --- */
+    ul.main-list { list-style: none; }
+
+    ul.main-list > li {
+      border-bottom: 1px solid #f0f0f0;
+      padding: 8px 0;
+    }
+
+    ul.main-list > li:last-child { border-bottom: none; }
+
+    .item-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .item-row input[type="checkbox"] {
+      width: 17px;
+      height: 17px;
+      cursor: pointer;
+      flex-shrink: 0;
+      accent-color: #2563eb;
+    }
+
+    .item-row .item-text { flex: 1; font-size: 0.95rem; }
+
+    .btn-icon {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 2px 5px;
+      border-radius: 4px;
+      transition: background 0.15s, color 0.15s;
+      color: #bbb;
+      line-height: 1;
+    }
+
+    .btn-icon:hover { color: #555; background: #f3f4f6; }
+    .btn-icon.delete:hover { color: #ef4444; background: #fff0f0; }
+
+    /* --- days-away badges --- */
+    .days-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 99px;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    .days-badge.today    { background: #fee2e2; color: #dc2626; }
+    .days-badge.urgent   { background: #fee2e2; color: #dc2626; }
+    .days-badge.soon     { background: #ffedd5; color: #c2410c; }
+    .days-badge.upcoming { background: #fef9c3; color: #a16207; }
+    .days-badge.future   { background: #dcfce7; color: #15803d; }
+    .days-badge.past     { background: #f1f5f9; color: #94a3b8; }
+
+    /* --- sub-items --- */
+    ul.sub-list {
+      list-style: none;
+      margin: 4px 0 4px 30px;
+    }
+
+    ul.sub-list li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 0;
+      font-size: 0.88rem;
+      color: #555;
+    }
+
+    ul.sub-list li .arrow   { color: #aaa; flex-shrink: 0; }
+    ul.sub-list li .sub-text { flex: 1; }
+
+    /* --- sub input --- */
+    .sub-input-row {
+      display: flex;
+      gap: 6px;
+      margin: 6px 0 4px 30px;
+    }
+
+    .sub-input-row input {
+      flex: 1;
+      padding: 6px 10px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      outline: none;
+    }
+
+    .sub-input-row input:focus { border-color: #94a3b8; }
+
+    .sub-input-row button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: #e2e8f0;
+      color: #334155;
+      transition: background 0.15s;
+    }
+
+    .sub-input-row button:hover { background: #cbd5e1; }
+
+    /* --- finished section --- */
+    .finished-item {
+      padding: 8px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .finished-item:last-child { border-bottom: none; }
+
+    .finished-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .done-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 99px;
+      flex-shrink: 0;
+    }
+
+    .done-badge.task        { background: #dbeafe; color: #1d4ed8; }
+    .done-badge.idea        { background: #ede9fe; color: #6d28d9; }
+    .done-badge.competition { background: #ffedd5; color: #c2410c; }
+
+    .done-text {
+      flex: 1;
+      font-size: 0.93rem;
+      color: #888;
+      text-decoration: line-through;
+    }
+
+    .done-date {
+      font-size: 0.75rem;
+      color: #bbb;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    ul.done-subs {
+      list-style: none;
+      margin: 2px 0 4px 48px;
+    }
+
+    ul.done-subs li {
+      font-size: 0.82rem;
+      color: #aaa;
+      text-decoration: line-through;
+      padding: 2px 0;
+    }
+
+    .empty {
+      color: #bbb;
+      font-size: 0.9rem;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Veer's To-Do App</h1>
+
+  <div class="container">
+
+    <!-- TASKS -->
+    <div class="section tasks">
+      <h2>Tasks</h2>
+      <div class="input-row">
+        <input id="task-input" type="text" placeholder="Add a task..." />
+        <button onclick="addItem('task')">Add</button>
+      </div>
+      <ul class="main-list" id="task-list"></ul>
+    </div>
+
+    <!-- IDEAS -->
+    <div class="section ideas">
+      <h2>Ideas</h2>
+      <div class="input-row">
+        <input id="idea-input" type="text" placeholder="Capture an idea..." />
+        <button onclick="addItem('idea')">Add</button>
+      </div>
+      <ul class="main-list" id="idea-list"></ul>
+    </div>
+
+    <!-- COMPETITIONS -->
+    <div class="section competitions">
+      <h2>Competitions</h2>
+      <div class="comp-input-row">
+        <input id="comp-input" type="text" placeholder="Competition name..." />
+        <input id="comp-date" type="date" />
+        <button onclick="addCompetition()">Add</button>
+      </div>
+      <ul class="main-list" id="comp-list"></ul>
+    </div>
+
+    <!-- FINISHED -->
+    <div class="section finished-box" id="finished-section" style="display:none;">
+      <h2>Finished</h2>
+      <div id="finished-list"></div>
+    </div>
+
+  </div>
+
+  <script>
+    const saved = localStorage.getItem('veer-todo');
+    const data = saved ? JSON.parse(saved) : {
+      tasks: [], ideas: [], competitions: [], finished: []
+    };
+    // migrate old "completed" key
+    if (!data.finished)      data.finished      = data.completed || [];
+    if (!data.competitions)  data.competitions  = [];
+
+    const openSubs = new Set();
+
+    function save() {
+      localStorage.setItem('veer-todo', JSON.stringify(data));
+    }
+
+    /* ── route render by type ── */
+    function renderSection(type) {
+      if (type === 'competition') renderCompetitions();
+      else render(type);
+    }
+
+    /* ── add task or idea ── */
+    function addItem(type) {
+      const input = document.getElementById(`${type}-input`);
+      const text = input.value.trim();
+      if (!text) return;
+      data[type + 's'].push({ text, subs: [] });
+      input.value = '';
+      save();
+      render(type);
+      input.focus();
+    }
+
+    /* ── toggle sub-input ── */
+    function toggleSubInput(type, i) {
+      const key = `${type}-${i}`;
+      openSubs.has(key) ? openSubs.delete(key) : openSubs.add(key);
+      renderSection(type);
+      if (openSubs.has(key)) {
+        document.getElementById(`sub-text-${type}-${i}`)?.focus();
+      }
+    }
+
+    /* ── add sub-item ── */
+    function addSub(type, i) {
+      const input = document.getElementById(`sub-text-${type}-${i}`);
+      const text = input.value.trim();
+      if (!text) return;
+      data[type + 's'][i].subs.push(text);
+      input.value = '';
+      save();
+      renderSection(type);
+      document.getElementById(`sub-text-${type}-${i}`)?.focus();
+    }
+
+    /* ── delete sub-item ── */
+    function deleteSub(type, i, j) {
+      data[type + 's'][i].subs.splice(j, 1);
+      save();
+      renderSection(type);
+    }
+
+    /* ── check off task or idea → finished ── */
+    function completeItem(type, i) {
+      const item = data[type + 's'].splice(i, 1)[0];
+      openSubs.delete(`${type}-${i}`);
+      data.finished.unshift({ ...item, type, finishedAt: new Date().toISOString() });
+      save();
+      render(type);
+      renderFinished();
+    }
+
+    /* ── check off competition → finished ── */
+    function completeCompetition(i) {
+      const item = data.competitions.splice(i, 1)[0];
+      openSubs.delete(`competition-${i}`);
+      data.finished.unshift({ ...item, type: 'competition', finishedAt: new Date().toISOString() });
+      save();
+      renderCompetitions();
+      renderFinished();
+    }
+
+    /* ── delete top-level item ── */
+    function deleteItem(type, i) {
+      data[type + 's'].splice(i, 1);
+      openSubs.delete(`${type}-${i}`);
+      save();
+      render(type);
+    }
+
+    /* ── delete competition ── */
+    function deleteCompetition(i) {
+      data.competitions.splice(i, 1);
+      openSubs.delete(`competition-${i}`);
+      save();
+      renderCompetitions();
+    }
+
+    /* ── delete finished item ── */
+    function deleteFinished(i) {
+      data.finished.splice(i, 1);
+      save();
+      renderFinished();
+    }
+
+    /* ── add competition ── */
+    function addCompetition() {
+      const nameInput = document.getElementById('comp-input');
+      const dateInput = document.getElementById('comp-date');
+      const text = nameInput.value.trim();
+      if (!text) return;
+      data.competitions.push({ text, date: dateInput.value, subs: [] });
+      nameInput.value = '';
+      dateInput.value = '';
+      save();
+      renderCompetitions();
+      nameInput.focus();
+    }
+
+    /* ── days-away badge helper ── */
+    function daysBadge(dateStr) {
+      if (!dateStr) return '';
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const comp  = new Date(dateStr + 'T00:00:00');
+      const diff  = Math.round((comp - today) / 86400000);
+
+      let cls, label;
+      if (diff === 0)       { cls = 'today';    label = 'Today!'; }
+      else if (diff < 0)    { cls = 'past';     label = `${Math.abs(diff)}d ago`; }
+      else if (diff <= 3)   { cls = 'urgent';   label = `${diff}d away`; }
+      else if (diff <= 7)   { cls = 'soon';     label = `${diff}d away`; }
+      else if (diff <= 30)  { cls = 'upcoming'; label = `${diff}d away`; }
+      else                  { cls = 'future';   label = `${diff}d away`; }
+
+      return `<span class="days-badge ${cls}">${label}</span>`;
+    }
+
+    /* ── render tasks or ideas ── */
+    function render(type) {
+      const list  = document.getElementById(`${type}-list`);
+      const items = data[type + 's'];
+
+      if (items.length === 0) {
+        list.innerHTML = `<li class="empty">Nothing here yet.</li>`;
+        return;
+      }
+
+      list.innerHTML = items.map((item, i) => {
+        const key     = `${type}-${i}`;
+        const subOpen = openSubs.has(key);
+
+        const subItems = item.subs.map((sub, j) => `
+          <li>
+            <span class="arrow">↳</span>
+            <span class="sub-text">${escapeHtml(sub)}</span>
+            <button class="btn-icon delete" onclick="deleteSub('${type}', ${i}, ${j})" title="Remove">&#x2715;</button>
+          </li>`).join('');
+
+        const subInput = subOpen ? `
+          <div class="sub-input-row">
+            <input id="sub-text-${type}-${i}" type="text" placeholder="Add sub-item..."
+                   onkeydown="if(event.key==='Enter') addSub('${type}', ${i})" />
+            <button onclick="addSub('${type}', ${i})">Add</button>
+          </div>` : '';
+
+        return `
+          <li>
+            <div class="item-row">
+              <input type="checkbox" onchange="completeItem('${type}', ${i})" title="Mark finished" />
+              <span class="item-text">${escapeHtml(item.text)}</span>
+              <button class="btn-icon" onclick="toggleSubInput('${type}', ${i})" title="${subOpen ? 'Close' : 'Add sub-item'}">${subOpen ? '−' : '+'}</button>
+              <button class="btn-icon delete" onclick="deleteItem('${type}', ${i})" title="Delete">&#x2715;</button>
+            </div>
+            ${item.subs.length > 0 ? `<ul class="sub-list">${subItems}</ul>` : ''}
+            ${subInput}
+          </li>`;
+      }).join('');
+    }
+
+    /* ── render competitions ── */
+    function renderCompetitions() {
+      const list  = document.getElementById('comp-list');
+      const items = data.competitions;
+
+      if (items.length === 0) {
+        list.innerHTML = `<li class="empty">No competitions yet.</li>`;
+        return;
+      }
+
+      list.innerHTML = items.map((item, i) => {
+        const key     = `competition-${i}`;
+        const subOpen = openSubs.has(key);
+
+        const subItems = item.subs.map((sub, j) => `
+          <li>
+            <span class="arrow">↳</span>
+            <span class="sub-text">${escapeHtml(sub)}</span>
+            <button class="btn-icon delete" onclick="deleteSub('competition', ${i}, ${j})" title="Remove">&#x2715;</button>
+          </li>`).join('');
+
+        const subInput = subOpen ? `
+          <div class="sub-input-row">
+            <input id="sub-text-competition-${i}" type="text" placeholder="Add detail..."
+                   onkeydown="if(event.key==='Enter') addSub('competition', ${i})" />
+            <button onclick="addSub('competition', ${i})">Add</button>
+          </div>` : '';
+
+        return `
+          <li>
+            <div class="item-row">
+              <input type="checkbox" onchange="completeCompetition(${i})" title="Mark finished" />
+              <span class="item-text">${escapeHtml(item.text)}</span>
+              ${daysBadge(item.date)}
+              <button class="btn-icon" onclick="toggleSubInput('competition', ${i})" title="${subOpen ? 'Close' : 'Add detail'}">${subOpen ? '−' : '+'}</button>
+              <button class="btn-icon delete" onclick="deleteCompetition(${i})" title="Delete">&#x2715;</button>
+            </div>
+            ${item.subs.length > 0 ? `<ul class="sub-list">${subItems}</ul>` : ''}
+            ${subInput}
+          </li>`;
+      }).join('');
+    }
+
+    /* ── render finished section ── */
+    function renderFinished() {
+      const section = document.getElementById('finished-section');
+      const list    = document.getElementById('finished-list');
+
+      if (data.finished.length === 0) {
+        section.style.display = 'none';
+        return;
+      }
+
+      section.style.display = '';
+      list.innerHTML = data.finished.map((item, i) => {
+        const subs = item.subs && item.subs.length > 0
+          ? `<ul class="done-subs">${item.subs.map(s => `<li>↳ ${escapeHtml(s)}</li>`).join('')}</ul>`
+          : '';
+        const date = item.finishedAt
+          ? new Date(item.finishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          : '';
+        return `
+          <div class="finished-item">
+            <div class="finished-row">
+              <span class="done-badge ${item.type}">${item.type}</span>
+              <span class="done-text">${escapeHtml(item.text)}</span>
+              ${date ? `<span class="done-date">${date}</span>` : ''}
+              <button class="btn-icon delete" onclick="deleteFinished(${i})" title="Remove">&#x2715;</button>
+            </div>
+            ${subs}
+          </div>`;
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    document.getElementById('task-input').addEventListener('keydown', e => { if (e.key === 'Enter') addItem('task'); });
+    document.getElementById('idea-input').addEventListener('keydown', e => { if (e.key === 'Enter') addItem('idea'); });
+    document.getElementById('comp-input').addEventListener('keydown', e => { if (e.key === 'Enter') addCompetition(); });
+
+    render('task');
+    render('idea');
+    renderCompetitions();
+    renderFinished();
+  </script>
+
+</body>
+</html>
