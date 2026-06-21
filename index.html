@@ -330,7 +330,7 @@
     </div>
 
     <!-- FINISHED -->
-    <div class="section finished-box" id="finished-section" style="display:none;">
+    <div class="section finished-box" id="finished-section">
       <h2>Finished</h2>
       <div id="finished-list"></div>
     </div>
@@ -338,13 +338,18 @@
   </div>
 
   <script>
-    const saved = localStorage.getItem('veer-todo');
-    const data = saved ? JSON.parse(saved) : {
-      tasks: [], ideas: [], competitions: [], finished: []
-    };
-    // migrate old "completed" key
-    if (!data.finished)      data.finished      = data.completed || [];
-    if (!data.competitions)  data.competitions  = [];
+    let data;
+    try {
+      const saved = localStorage.getItem('veer-todo');
+      data = saved ? JSON.parse(saved) : {};
+    } catch(e) {
+      data = {};
+    }
+    if (!Array.isArray(data.tasks))        data.tasks        = [];
+    if (!Array.isArray(data.ideas))        data.ideas        = [];
+    if (!Array.isArray(data.competitions)) data.competitions = [];
+    if (!Array.isArray(data.finished))     data.finished     = Array.isArray(data.completed) ? data.completed : [];
+    save();
 
     const openSubs = new Set();
 
@@ -565,12 +570,12 @@
       const section = document.getElementById('finished-section');
       const list    = document.getElementById('finished-list');
 
+      section.style.display = '';
+
       if (data.finished.length === 0) {
-        section.style.display = 'none';
+        list.innerHTML = `<p class="empty">Nothing finished yet.</p>`;
         return;
       }
-
-      section.style.display = '';
       list.innerHTML = data.finished.map((item, i) => {
         const subs = item.subs && item.subs.length > 0
           ? `<ul class="done-subs">${item.subs.map(s => `<li>↳ ${escapeHtml(s)}</li>`).join('')}</ul>`
