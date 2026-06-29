@@ -166,6 +166,27 @@
     .btn-icon:hover { color: #555; background: #f3f4f6; }
     .btn-icon.delete:hover { color: #ef4444; background: #fff0f0; }
 
+    .btn-check {
+      background: none;
+      border: 2px solid #22c55e;
+      color: #22c55e;
+      border-radius: 50%;
+      width: 26px;
+      height: 26px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, color 0.15s;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .btn-check:hover { background: #22c55e; color: #fff; }
+
     /* --- days-away badges --- */
     .days-badge {
       font-size: 0.72rem;
@@ -308,16 +329,6 @@
       <ul class="main-list" id="task-list"></ul>
     </div>
 
-    <!-- IDEAS -->
-    <div class="section ideas">
-      <h2>Ideas</h2>
-      <div class="input-row">
-        <input id="idea-input" type="text" placeholder="Capture an idea..." />
-        <button onclick="addItem('idea')">Add</button>
-      </div>
-      <ul class="main-list" id="idea-list"></ul>
-    </div>
-
     <!-- COMPETITIONS -->
     <div class="section competitions">
       <h2>Competitions</h2>
@@ -327,6 +338,16 @@
         <button onclick="addCompetition()">Add</button>
       </div>
       <ul class="main-list" id="comp-list"></ul>
+    </div>
+
+    <!-- IDEAS -->
+    <div class="section ideas">
+      <h2>Ideas</h2>
+      <div class="input-row">
+        <input id="idea-input" type="text" placeholder="Capture an idea..." />
+        <button onclick="addItem('idea')">Add</button>
+      </div>
+      <ul class="main-list" id="idea-list"></ul>
     </div>
 
     <!-- FINISHED -->
@@ -511,7 +532,7 @@
         return `
           <li>
             <div class="item-row">
-              <input type="checkbox" onchange="completeItem('${type}', ${i})" title="Mark finished" />
+              <button class="btn-check" onclick="completeItem('${type}', ${i})" title="Mark finished">✓</button>
               <span class="item-text">${escapeHtml(item.text)}</span>
               <button class="btn-icon" onclick="toggleSubInput('${type}', ${i})" title="${subOpen ? 'Close' : 'Add sub-item'}">${subOpen ? '−' : '+'}</button>
               <button class="btn-icon delete" onclick="deleteItem('${type}', ${i})" title="Delete">&#x2715;</button>
@@ -553,7 +574,7 @@
         return `
           <li>
             <div class="item-row">
-              <input type="checkbox" onchange="completeCompetition(${i})" title="Mark finished" />
+              <button class="btn-check" onclick="completeCompetition(${i})" title="Mark finished">✓</button>
               <span class="item-text">${escapeHtml(item.text)}</span>
               ${daysBadge(item.date)}
               <button class="btn-icon" onclick="toggleSubInput('competition', ${i})" title="${subOpen ? 'Close' : 'Add detail'}">${subOpen ? '−' : '+'}</button>
