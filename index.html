@@ -255,9 +255,20 @@
     .sub-input-row button:hover { background: #cbd5e1; }
 
     /* --- finished section --- */
+    .finished-group { margin-bottom: 24px; }
+    .finished-group:last-child { margin-bottom: 0; }
+
+    .finished-group-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1.5px solid #f0f0f0;
+    }
+
     .finished-item {
       padding: 8px 0;
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid #f5f5f5;
     }
 
     .finished-item:last-child { border-bottom: none; }
@@ -267,18 +278,6 @@
       align-items: center;
       gap: 8px;
     }
-
-    .done-badge {
-      font-size: 0.7rem;
-      font-weight: 700;
-      padding: 2px 7px;
-      border-radius: 99px;
-      flex-shrink: 0;
-    }
-
-    .done-badge.task        { background: #dbeafe; color: #1d4ed8; }
-    .done-badge.idea        { background: #ede9fe; color: #6d28d9; }
-    .done-badge.competition { background: #ffedd5; color: #c2410c; }
 
     .done-text {
       flex: 1;
@@ -293,6 +292,20 @@
       flex-shrink: 0;
       white-space: nowrap;
     }
+
+    .btn-restore {
+      background: none;
+      border: 1.5px solid #cbd5e1;
+      color: #94a3b8;
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+
+    .btn-restore:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
 
     ul.done-subs {
       list-style: none;
@@ -586,34 +599,66 @@
       }).join('');
     }
 
+    /* ── restore item from finished back to its section ── */
+    function restoreItem(i) {
+      const item = data.finished.splice(i, 1)[0];
+      const restored = { text: item.text, subs: item.subs || [] };
+      if (item.date) restored.date = item.date;
+      if (item.type === 'competition') {
+        data.competitions.push(restored);
+        renderCompetitions();
+      } else {
+        data[item.type + 's'].push(restored);
+        render(item.type);
+      }
+      save();
+      renderFinished();
+    }
+
     /* ── render finished section ── */
     function renderFinished() {
-      const section = document.getElementById('finished-section');
-      const list    = document.getElementById('finished-list');
+      const list = document.getElementById('finished-list');
+      document.getElementById('finished-section').style.display = '';
 
-      section.style.display = '';
+      const groups = [
+        { type: 'task',        label: 'Finished Tasks',        color: '#2563eb' },
+        { type: 'competition', label: 'Finished Competitions',  color: '#ea580c' },
+        { type: 'idea',        label: 'Finished Ideas',         color: '#7c3aed' },
+      ];
 
-      if (data.finished.length === 0) {
-        list.innerHTML = `<p class="empty">Nothing finished yet.</p>`;
-        return;
+      let html = '';
+      for (const group of groups) {
+        const items = data.finished
+          .map((item, i) => ({ ...item, _idx: i }))
+          .filter(item => item.type === group.type);
+
+        html += `<div class="finished-group">
+          <h3 class="finished-group-title" style="color:${group.color}">${group.label}</h3>`;
+
+        if (items.length === 0) {
+          html += `<p class="empty">Nothing here yet.</p>`;
+        } else {
+          html += items.map(item => {
+            const subs = item.subs && item.subs.length > 0
+              ? `<ul class="done-subs">${item.subs.map(s => `<li>↳ ${escapeHtml(s)}</li>`).join('')}</ul>`
+              : '';
+            const date = item.finishedAt
+              ? new Date(item.finishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+              : '';
+            return `
+              <div class="finished-item">
+                <div class="finished-row">
+                  <span class="done-text">${escapeHtml(item.text)}</span>
+                  ${date ? `<span class="done-date">${date}</span>` : ''}
+                  <button class="btn-restore" onclick="restoreItem(${item._idx})">↩ Restore</button>
+                </div>
+                ${subs}
+              </div>`;
+          }).join('');
+        }
+        html += `</div>`;
       }
-      list.innerHTML = data.finished.map((item, i) => {
-        const subs = item.subs && item.subs.length > 0
-          ? `<ul class="done-subs">${item.subs.map(s => `<li>↳ ${escapeHtml(s)}</li>`).join('')}</ul>`
-          : '';
-        const date = item.finishedAt
-          ? new Date(item.finishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-          : '';
-        return `
-          <div class="finished-item">
-            <div class="finished-row">
-              <span class="done-badge ${item.type}">${item.type}</span>
-              <span class="done-text">${escapeHtml(item.text)}</span>
-              ${date ? `<span class="done-date">${date}</span>` : ''}
-            </div>
-            ${subs}
-          </div>`;
-      }).join('');
+      list.innerHTML = html;
     }
 
     function escapeHtml(str) {
