@@ -346,19 +346,20 @@
     .sub-input-row button:hover { background: #cbd5e1; }
 
     /* ── finished section ── */
-    .finished-group { margin-bottom: 24px; }
+    .finished-group { margin-bottom: 20px; }
     .finished-group:last-child { margin-bottom: 0; }
 
     .finished-group-title {
-      font-size: 0.85rem;
-      font-weight: 700;
-      margin-bottom: 10px;
-      padding-bottom: 6px;
-      border-bottom: 1.5px solid #f0f0f0;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #bbb;
+      margin-bottom: 8px;
     }
 
     .finished-item {
-      padding: 8px 0;
+      padding: 7px 0;
       border-bottom: 1px solid #f5f5f5;
     }
 
@@ -373,13 +374,13 @@
     .done-text {
       flex: 1;
       font-size: 0.93rem;
-      color: #888;
+      color: #aaa;
       text-decoration: line-through;
     }
 
     .done-date {
       font-size: 0.75rem;
-      color: #bbb;
+      color: #ccc;
       flex-shrink: 0;
       white-space: nowrap;
     }
@@ -903,7 +904,7 @@
           .filter(item => item.type === group.type);
 
         html += `<div class="finished-group">
-          <h3 class="finished-group-title" style="color:${group.color}">${group.label}</h3>`;
+          <h3 class="finished-group-title">${group.label}</h3>`;
 
         if (!items.length) {
           html += `<p class="empty">Nothing here yet.</p>`;
