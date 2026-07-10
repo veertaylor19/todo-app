@@ -501,6 +501,33 @@
       box-shadow: 0 1px 4px var(--shadow);
     }
 
+    /* ── today section ── */
+    .today-section {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+
+    .today-section h2 { font-size: 1.2rem; color: #ef4444; margin-bottom: 4px; }
+
+    .today-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .today-group-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-faint);
+      margin: 14px 0 6px;
+    }
+
+    .today-group-label:first-child { margin-top: 0; }
+
     /* ── chrono section ── */
     .chrono-section {
       background: var(--surface);
@@ -574,12 +601,20 @@
 
     <!-- VIEW TOGGLE -->
     <div class="view-toggle">
-      <button class="view-tab active" id="tab-normal" onclick="switchView('normal')">Normal View</button>
+      <button class="view-tab active" id="tab-normal" onclick="switchView('normal')">Normal</button>
+      <button class="view-tab" id="tab-today" onclick="switchView('today')">Today</button>
       <button class="view-tab" id="tab-chrono" onclick="switchView('chrono')">Chronological</button>
     </div>
 
     <!-- TODAY ALERT -->
     <div id="today-alert" style="display:none;"></div>
+
+    <!-- TODAY VIEW -->
+    <div class="today-section" id="today-section" style="display:none;">
+      <h2>Today's Focus</h2>
+      <p class="today-subtitle">Overdue + due today + critical items without a date</p>
+      <div id="today-list"></div>
+    </div>
 
     <!-- CHRONO VIEW -->
     <div class="chrono-section" id="chrono-section" style="display:none;">
@@ -708,6 +743,7 @@
       if (type === 'competition') renderCompetitions();
       else render(type);
       if (currentView === 'chrono') renderChronological();
+      if (currentView === 'today')  renderToday();
     }
 
     /* ── view toggle ── */
@@ -715,15 +751,64 @@
 
     function switchView(v) {
       currentView = v;
-      document.getElementById('tab-normal').classList.toggle('active', v === 'normal');
-      document.getElementById('tab-chrono').classList.toggle('active', v === 'chrono');
+      ['normal','today','chrono'].forEach(id =>
+        document.getElementById('tab-' + id).classList.toggle('active', v === id));
+      document.getElementById('today-section').style.display  = v === 'today'  ? '' : 'none';
       document.getElementById('chrono-section').style.display = v === 'chrono' ? '' : 'none';
       ['task-list','comp-list','idea-list'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.closest('.section').style.display = v === 'normal' ? '' : 'none';
       });
       document.querySelector('.section.finished-box').style.display = v === 'normal' ? '' : 'none';
+      if (v === 'today')  renderToday();
       if (v === 'chrono') renderChronological();
+    }
+
+    /* ── today render ── */
+    function renderToday() {
+      const list  = document.getElementById('today-list');
+      const today = new Date(); today.setHours(0,0,0,0);
+
+      const overdue = [], dueToday = [], critical = [];
+
+      const classify = (item, type, i, dateStr) => {
+        if (!matchesSearch(item)) return;
+        if (dateStr) {
+          const d = new Date(dateStr + 'T00:00:00');
+          if (d < today)                    overdue.push({ ...item, _type: type, _i: i, _date: dateStr });
+          else if (d.getTime() === today.getTime()) dueToday.push({ ...item, _type: type, _i: i, _date: dateStr });
+        } else if (item.priority === 'critical') {
+          critical.push({ ...item, _type: type, _i: i, _date: null });
+        }
+      };
+
+      data.tasks.forEach((it, i)        => classify(it, 'task',        i, it.dueDate));
+      data.competitions.forEach((it, i) => classify(it, 'competition', i, it.date));
+      data.ideas.forEach((it, i)        => classify(it, 'idea',        i, null));
+
+      if (!overdue.length && !dueToday.length && !critical.length) {
+        list.innerHTML = '<p class="empty">Nothing urgent today — nice one Veer!</p>'; return;
+      }
+
+      const buildTodayItem = item => {
+        const completeCall = item._type === 'competition'
+          ? `completeCompetition(${item._i},this)`
+          : `completeItem('${item._type}',${item._i},this)`;
+        const badge = item._date ? daysBadge(item._date) : '';
+        return `<div class="chrono-item">
+          <button class="btn-check" onclick="${completeCall}" title="Mark finished">✓</button>
+          <span class="chrono-type ${item._type}">${item._type === 'competition' ? 'comp' : item._type}</span>
+          ${priBadge(item.priority)}
+          <span class="chrono-text">${escapeHtml(item.text)}</span>
+          ${badge}
+        </div>`;
+      };
+
+      let html = '';
+      if (overdue.length)  html += `<div class="today-group-label">Overdue</div>${overdue.map(buildTodayItem).join('')}`;
+      if (dueToday.length) html += `<div class="today-group-label">Due Today</div>${dueToday.map(buildTodayItem).join('')}`;
+      if (critical.length) html += `<div class="today-group-label">Very Important (no date)</div>${critical.map(buildTodayItem).join('')}`;
+      list.innerHTML = html;
     }
 
     /* ── chrono render ── */
