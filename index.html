@@ -253,6 +253,25 @@
 
     .recur-badge { font-size: 0.82rem; flex-shrink: 0; opacity: 0.6; cursor: default; }
 
+    /* ── drag to reorder ── */
+    .drag-handle {
+      color: var(--text-faint);
+      cursor: grab;
+      font-size: 1rem;
+      padding: 2px 4px;
+      flex-shrink: 0;
+      line-height: 1;
+      user-select: none;
+    }
+
+    .drag-handle:active { cursor: grabbing; }
+
+    li.drag-over {
+      border-top: 2px solid #3b82f6;
+    }
+
+    li.dragging { opacity: 0.35; }
+
     /* ── days-away badges ── */
     .days-badge {
       font-size: 0.72rem;
@@ -1038,6 +1057,40 @@
       const { type } = editing; editing = null; renderSection(type);
     }
 
+    /* ── drag to reorder ── */
+    let dragSrc = null;
+
+    function onDragStart(e, type, i) {
+      dragSrc = { type, i };
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => e.target.closest('li').classList.add('dragging'), 0);
+    }
+
+    function onDragOver(e, type, i) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      document.querySelectorAll('li.drag-over').forEach(el => el.classList.remove('drag-over'));
+      e.target.closest('li')?.classList.add('drag-over');
+    }
+
+    function onDragEnd(e) {
+      document.querySelectorAll('li.dragging, li.drag-over').forEach(el =>
+        el.classList.remove('dragging', 'drag-over'));
+    }
+
+    function onDrop(e, type, i) {
+      e.preventDefault();
+      document.querySelectorAll('li.dragging, li.drag-over').forEach(el =>
+        el.classList.remove('dragging', 'drag-over'));
+      if (!dragSrc || dragSrc.type !== type || dragSrc.i === i) { dragSrc = null; return; }
+      const arr = type === 'competition' ? data.competitions : data[type + 's'];
+      const [moved] = arr.splice(dragSrc.i, 1);
+      arr.splice(i, 0, moved);
+      dragSrc = null;
+      openSubs.clear(); openNotes.clear();
+      save(); renderSection(type);
+    }
+
     /* ── notes ── */
     function toggleNotes(type, i) {
       const key = `${type}-${i}`;
@@ -1155,8 +1208,13 @@
           <button onclick="addSub('${type}',${i})">Add</button>
         </div>` : '';
 
-      return `<li>
+      return `<li draggable="true"
+          ondragstart="onDragStart(event,'${type}',${i})"
+          ondragover="onDragOver(event,'${type}',${i})"
+          ondragend="onDragEnd(event)"
+          ondrop="onDrop(event,'${type}',${i})">
         <div class="item-row">
+          <span class="drag-handle" title="Drag to reorder">⠿</span>
           <button class="btn-check" onclick="${completeCall}" title="Mark finished">✓</button>
           ${priBadge(item.priority)}
           <span class="item-text">${escapeHtml(item.text)}</span>
