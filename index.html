@@ -235,18 +235,21 @@
     .section.competitions .add-btn { background: #f97316; color: #fff; }
     .section.competitions .add-btn:hover { background: #ea580c; }
 
-    /* ── priority badges ── */
+    /* ── priority badges (5 levels) ── */
     .pri-badge {
       font-size: 0.65rem;
       font-weight: 800;
-      padding: 2px 6px;
+      padding: 2px 7px;
       border-radius: 4px;
       flex-shrink: 0;
       letter-spacing: 0.03em;
+      white-space: nowrap;
     }
 
-    .pri-badge.high   { background: rgba(239,68,68,0.15);  color: #ef4444; }
-    .pri-badge.low    { background: rgba(34,197,94,0.15);  color: #22c55e; }
+    .pri-badge.critical { background: rgba(220,38,38,0.18);  color: #dc2626; }
+    .pri-badge.high     { background: rgba(249,115,22,0.18); color: #ea580c; }
+    .pri-badge.low      { background: rgba(59,130,246,0.15); color: #3b82f6; }
+    .pri-badge.note     { background: rgba(148,163,184,0.15);color: #94a3b8; }
 
     /* ── days-away badges ── */
     .days-badge {
@@ -466,6 +469,83 @@
 
     .empty      { color: var(--text-faint); font-size: 0.9rem; font-style: italic; }
     .no-results { color: var(--text-faint); font-size: 0.9rem; font-style: italic; }
+
+    /* ── view toggle ── */
+    .view-toggle {
+      display: flex;
+      gap: 6px;
+      background: var(--surface);
+      border-radius: 10px;
+      padding: 5px;
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+
+    .view-tab {
+      flex: 1;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 7px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: none;
+      color: var(--text-muted);
+      transition: all 0.18s;
+    }
+
+    .view-tab.active {
+      background: var(--bg);
+      color: var(--text);
+      box-shadow: 0 1px 4px var(--shadow);
+    }
+
+    /* ── chrono section ── */
+    .chrono-section {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+
+    .chrono-section h2 { font-size: 1.2rem; color: #2563eb; margin-bottom: 4px; }
+
+    .chrono-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .chrono-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .chrono-item:last-child { border-bottom: none; }
+
+    .chrono-type {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 2px 7px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .chrono-type.task        { background: rgba(59,130,246,0.15);  color: #3b82f6; }
+    .chrono-type.competition { background: rgba(249,115,22,0.15);  color: #f97316; }
+    .chrono-type.idea        { background: rgba(168,85,247,0.15);  color: #a855f7; }
+
+    .chrono-text { flex: 1; font-size: 0.95rem; color: var(--text); }
+
+    .chrono-no-date {
+      font-size: 0.72rem;
+      color: var(--text-faint);
+      flex-shrink: 0;
+    }
   </style>
 </head>
 <body>
@@ -490,8 +570,21 @@
       </div>
     </div>
 
+    <!-- VIEW TOGGLE -->
+    <div class="view-toggle">
+      <button class="view-tab active" id="tab-normal" onclick="switchView('normal')">Normal View</button>
+      <button class="view-tab" id="tab-chrono" onclick="switchView('chrono')">Chronological</button>
+    </div>
+
     <!-- TODAY ALERT -->
     <div id="today-alert" style="display:none;"></div>
+
+    <!-- CHRONO VIEW -->
+    <div class="chrono-section" id="chrono-section" style="display:none;">
+      <h2>What to Do First</h2>
+      <p class="chrono-subtitle">All items sorted by date — most urgent at the top</p>
+      <div id="chrono-list"></div>
+    </div>
 
     <!-- TASKS -->
     <div class="section tasks">
@@ -499,9 +592,11 @@
       <div class="add-row">
         <input id="task-input" type="text" placeholder="Add a task..." maxlength="200" />
         <select id="task-priority">
-          <option value="high">High</option>
-          <option value="medium" selected>Medium</option>
-          <option value="low">Low</option>
+          <option value="critical">Very Important</option>
+          <option value="high">Important</option>
+          <option value="medium" selected>Normal</option>
+          <option value="low">Low Priority</option>
+          <option value="note">Just Think About It</option>
         </select>
         <input id="task-due" type="date" />
         <button class="add-btn" onclick="addItem('task')">Add</button>
@@ -519,9 +614,11 @@
         <input id="comp-input" type="text" placeholder="Competition name..." maxlength="200" />
         <input id="comp-date" type="date" />
         <select id="comp-priority">
-          <option value="high">High</option>
-          <option value="medium" selected>Medium</option>
-          <option value="low">Low</option>
+          <option value="critical">Very Important</option>
+          <option value="high">Important</option>
+          <option value="medium" selected>Normal</option>
+          <option value="low">Low Priority</option>
+          <option value="note">Just Think About It</option>
         </select>
         <button class="add-btn" onclick="addCompetition()">Add</button>
       </div>
@@ -534,9 +631,11 @@
       <div class="add-row">
         <input id="idea-input" type="text" placeholder="Capture an idea..." maxlength="200" />
         <select id="idea-priority">
-          <option value="high">High</option>
-          <option value="medium" selected>Medium</option>
-          <option value="low">Low</option>
+          <option value="critical">Very Important</option>
+          <option value="high">Important</option>
+          <option value="medium" selected>Normal</option>
+          <option value="low">Low Priority</option>
+          <option value="note">Just Think About It</option>
         </select>
         <button class="add-btn" onclick="addItem('idea')">Add</button>
       </div>
@@ -599,12 +698,77 @@
     function renderSection(type) {
       if (type === 'competition') renderCompetitions();
       else render(type);
+      if (currentView === 'chrono') renderChronological();
+    }
+
+    /* ── view toggle ── */
+    let currentView = 'normal';
+
+    function switchView(v) {
+      currentView = v;
+      document.getElementById('tab-normal').classList.toggle('active', v === 'normal');
+      document.getElementById('tab-chrono').classList.toggle('active', v === 'chrono');
+      document.getElementById('chrono-section').style.display = v === 'chrono' ? '' : 'none';
+      ['task-list','comp-list','idea-list'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.closest('.section').style.display = v === 'normal' ? '' : 'none';
+      });
+      document.querySelector('.section.finished-box').style.display = v === 'normal' ? '' : 'none';
+      if (v === 'chrono') renderChronological();
+    }
+
+    /* ── chrono render ── */
+    const PRI_ORDER = { critical: 0, high: 1, medium: 2, low: 3, note: 4 };
+
+    function renderChronological() {
+      const list = document.getElementById('chrono-list');
+      const all = [];
+
+      data.tasks.forEach((item, i) => {
+        if (matchesSearch(item)) all.push({ ...item, _type: 'task', _i: i, _date: item.dueDate || null });
+      });
+      data.competitions.forEach((item, i) => {
+        if (matchesSearch(item)) all.push({ ...item, _type: 'competition', _i: i, _date: item.date || null });
+      });
+      data.ideas.forEach((item, i) => {
+        if (matchesSearch(item)) all.push({ ...item, _type: 'idea', _i: i, _date: null });
+      });
+
+      if (!all.length) { list.innerHTML = '<p class="empty">Nothing to show.</p>'; return; }
+
+      const today = new Date(); today.setHours(0,0,0,0);
+
+      all.sort((a, b) => {
+        const hasA = !!a._date, hasB = !!b._date;
+        if (hasA && hasB) {
+          const diff = new Date(a._date + 'T00:00:00') - new Date(b._date + 'T00:00:00');
+          if (diff !== 0) return diff;
+        }
+        if (hasA && !hasB) return -1;
+        if (!hasA && hasB) return 1;
+        return (PRI_ORDER[a.priority] || 2) - (PRI_ORDER[b.priority] || 2);
+      });
+
+      list.innerHTML = all.map(item => {
+        const dateHtml = item._date ? daysBadge(item._date) : `<span class="chrono-no-date">No date</span>`;
+        const completeCall = item._type === 'competition'
+          ? `completeCompetition(${item._i},this)`
+          : `completeItem('${item._type}',${item._i},this)`;
+        return `<div class="chrono-item">
+          <button class="btn-check" onclick="${completeCall}" title="Mark finished">✓</button>
+          <span class="chrono-type ${item._type}">${item._type === 'competition' ? 'comp' : item._type}</span>
+          ${priBadge(item.priority)}
+          <span class="chrono-text">${escapeHtml(item.text)}</span>
+          ${dateHtml}
+        </div>`;
+      }).join('');
     }
 
     /* ── search ── */
     function handleSearch(val) {
       searchQuery = val.toLowerCase().trim();
       render('task'); render('idea'); renderCompetitions();
+      if (currentView === 'chrono') renderChronological();
     }
 
     function matchesSearch(item) {
@@ -685,9 +849,10 @@
       return `<span class="days-badge ${cls}">${label}</span>`;
     }
 
+    const PRI_LABELS = { critical: 'VERY IMPORTANT', high: 'IMPORTANT', low: 'LOW PRIORITY', note: 'THINK ABOUT IT' };
     function priBadge(p) {
-      if (!p || p === 'medium') return '';
-      return `<span class="pri-badge ${p}">${p === 'high' ? 'HIGH' : 'LOW'}</span>`;
+      if (!p || p === 'medium' || !PRI_LABELS[p]) return '';
+      return `<span class="pri-badge ${p}">${PRI_LABELS[p]}</span>`;
     }
 
     /* ── add item ── */
