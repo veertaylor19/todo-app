@@ -4,22 +4,63 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Veer's To-Do App</title>
+  <script>
+    (function() {
+      const t = localStorage.getItem('veer-theme') ||
+        (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
   <style>
+    /* ── color tokens ── */
+    :root {
+      --bg:           #f0f2f5;
+      --surface:      #ffffff;
+      --text:         #1a1a1a;
+      --text-muted:   #888;
+      --text-faint:   #bbb;
+      --border:       #e0e0e0;
+      --border-light: #f0f0f0;
+      --input-bg:     #ffffff;
+      --input-text:   #1a1a1a;
+      --sub-btn-bg:   #e2e8f0;
+      --sub-btn-text: #334155;
+      --shadow:       rgba(0,0,0,0.08);
+      --placeholder:  #aaa;
+    }
+
+    [data-theme="dark"] {
+      --bg:           #0f1117;
+      --surface:      #1a1d2e;
+      --text:         #e2e8f0;
+      --text-muted:   #64748b;
+      --text-faint:   #3d4466;
+      --border:       #2d3148;
+      --border-light: #1e2235;
+      --input-bg:     #13162a;
+      --input-text:   #e2e8f0;
+      --sub-btn-bg:   #252844;
+      --sub-btn-text: #94a3b8;
+      --shadow:       rgba(0,0,0,0.4);
+      --placeholder:  #475569;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #f0f2f5;
-      color: #1a1a1a;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
       padding: 40px 20px;
+      transition: background 0.2s, color 0.2s;
     }
 
     h1 {
       text-align: center;
       font-size: 2rem;
       margin-bottom: 24px;
-      color: #2d2d2d;
+      color: var(--text);
     }
 
     .container {
@@ -38,14 +79,16 @@
     .search-wrap input {
       width: 100%;
       padding: 10px 14px 10px 38px;
-      border: 1.5px solid #e0e0e0;
+      border: 1.5px solid var(--border);
       border-radius: 10px;
       font-size: 0.95rem;
       outline: none;
-      background: #fff;
+      background: var(--surface);
+      color: var(--text);
       transition: border-color 0.2s;
     }
 
+    .search-wrap input::placeholder { color: var(--placeholder); }
     .search-wrap input:focus { border-color: #2563eb; }
 
     .search-icon {
@@ -53,7 +96,7 @@
       left: 12px;
       top: 50%;
       transform: translateY(-50%);
-      color: #bbb;
+      color: var(--text-muted);
       font-size: 1rem;
       pointer-events: none;
     }
@@ -65,42 +108,45 @@
       gap: 12px;
     }
 
-    .stats-bar { font-size: 0.8rem; color: #888; }
+    .stats-bar { font-size: 0.8rem; color: var(--text-muted); }
     .stats-bar span { margin-right: 14px; }
-    .stats-bar strong { color: #444; }
+    .stats-bar strong { color: var(--text); }
 
-    .export-btn {
+    .top-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+    .export-btn, .theme-btn {
       background: none;
-      border: 1.5px solid #e0e0e0;
+      border: 1.5px solid var(--border);
       border-radius: 8px;
       padding: 5px 12px;
       font-size: 0.82rem;
-      color: #888;
+      color: var(--text-muted);
       cursor: pointer;
       white-space: nowrap;
-      flex-shrink: 0;
       transition: all 0.15s;
     }
 
-    .export-btn:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
+    .export-btn:hover { border-color: #2563eb; color: #2563eb; background: rgba(37,99,235,0.08); }
+    .theme-btn:hover  { border-color: var(--text-muted); color: var(--text); }
 
     /* ── today alert ── */
     .today-alert {
-      background: #fee2e2;
-      border: 1.5px solid #fca5a5;
+      background: rgba(239,68,68,0.12);
+      border: 1.5px solid rgba(239,68,68,0.3);
       border-radius: 10px;
       padding: 12px 16px;
       font-size: 0.9rem;
-      color: #991b1b;
+      color: #ef4444;
       font-weight: 600;
     }
 
     /* ── sections ── */
     .section {
-      background: #fff;
+      background: var(--surface);
       border-radius: 12px;
       padding: 24px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      box-shadow: 0 2px 8px var(--shadow);
+      transition: background 0.2s;
     }
 
     .section-header {
@@ -111,24 +157,24 @@
     }
 
     .section-header h2 { font-size: 1.2rem; }
-    .section.tasks h2        { color: #2563eb; }
-    .section.ideas h2        { color: #7c3aed; }
-    .section.competitions h2 { color: #ea580c; }
-    .section.finished-box h2 { color: #16a34a; }
+    .section.tasks h2        { color: #3b82f6; }
+    .section.ideas h2        { color: #a855f7; }
+    .section.competitions h2 { color: #f97316; }
+    .section.finished-box h2 { color: #22c55e; }
 
     .notif-btn {
       background: none;
-      border: 1.5px solid #e0e0e0;
+      border: 1.5px solid var(--border);
       border-radius: 8px;
       padding: 4px 10px;
       font-size: 0.78rem;
-      color: #999;
+      color: var(--text-muted);
       cursor: pointer;
       transition: all 0.15s;
     }
 
-    .notif-btn:hover  { border-color: #ea580c; color: #ea580c; }
-    .notif-btn.on     { border-color: #16a34a; color: #16a34a; background: #f0fdf4; }
+    .notif-btn:hover { border-color: #f97316; color: #f97316; }
+    .notif-btn.on    { border-color: #22c55e; color: #22c55e; background: rgba(34,197,94,0.08); }
 
     /* ── add forms ── */
     .add-row {
@@ -138,36 +184,38 @@
       margin-bottom: 16px;
     }
 
+    .add-row input[type="text"],
+    .add-row input[type="date"],
+    .add-row select {
+      padding: 10px 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+      background: var(--input-bg);
+      color: var(--input-text);
+      transition: border-color 0.2s, background 0.2s;
+    }
+
     .add-row input[type="text"] {
       flex: 1;
       min-width: 140px;
       padding: 10px 14px;
-      border: 1.5px solid #e0e0e0;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      outline: none;
-      transition: border-color 0.2s;
     }
 
-    .add-row input[type="date"],
-    .add-row select {
-      padding: 10px 8px;
-      border: 1.5px solid #e0e0e0;
-      border-radius: 8px;
-      font-size: 0.88rem;
-      outline: none;
-      color: #555;
-      background: #fff;
-      cursor: pointer;
-      transition: border-color 0.2s;
-    }
+    .add-row input[type="text"]::placeholder { color: var(--placeholder); }
 
-    .section.tasks       .add-row input:focus,
-    .section.tasks       .add-row select:focus { border-color: #2563eb; }
-    .section.ideas       .add-row input:focus,
-    .section.ideas       .add-row select:focus { border-color: #7c3aed; }
+    .add-row select { cursor: pointer; }
+
+    .section.tasks        .add-row input:focus,
+    .section.tasks        .add-row select:focus { border-color: #3b82f6; }
+    .section.ideas        .add-row input:focus,
+    .section.ideas        .add-row select:focus { border-color: #a855f7; }
     .section.competitions .add-row input:focus,
-    .section.competitions .add-row select:focus { border-color: #ea580c; }
+    .section.competitions .add-row select:focus { border-color: #f97316; }
+
+    /* fix dark mode select option background */
+    [data-theme="dark"] .add-row select option { background: #1a1d2e; }
 
     .add-btn {
       padding: 10px 18px;
@@ -177,14 +225,15 @@
       font-weight: 600;
       cursor: pointer;
       transition: background 0.2s;
+      flex-shrink: 0;
     }
 
-    .section.tasks        .add-btn { background: #2563eb; color: #fff; }
-    .section.tasks        .add-btn:hover { background: #1d4ed8; }
-    .section.ideas        .add-btn { background: #7c3aed; color: #fff; }
-    .section.ideas        .add-btn:hover { background: #6d28d9; }
-    .section.competitions .add-btn { background: #ea580c; color: #fff; }
-    .section.competitions .add-btn:hover { background: #c2410c; }
+    .section.tasks        .add-btn { background: #3b82f6; color: #fff; }
+    .section.tasks        .add-btn:hover { background: #2563eb; }
+    .section.ideas        .add-btn { background: #a855f7; color: #fff; }
+    .section.ideas        .add-btn:hover { background: #9333ea; }
+    .section.competitions .add-btn { background: #f97316; color: #fff; }
+    .section.competitions .add-btn:hover { background: #ea580c; }
 
     /* ── priority badges ── */
     .pri-badge {
@@ -196,8 +245,8 @@
       letter-spacing: 0.03em;
     }
 
-    .pri-badge.high   { background: #fee2e2; color: #dc2626; }
-    .pri-badge.low    { background: #dcfce7; color: #15803d; }
+    .pri-badge.high   { background: rgba(239,68,68,0.15);  color: #ef4444; }
+    .pri-badge.low    { background: rgba(34,197,94,0.15);  color: #22c55e; }
 
     /* ── days-away badges ── */
     .days-badge {
@@ -209,18 +258,18 @@
       white-space: nowrap;
     }
 
-    .days-badge.today    { background: #fee2e2; color: #dc2626; }
-    .days-badge.urgent   { background: #fee2e2; color: #dc2626; }
-    .days-badge.soon     { background: #ffedd5; color: #c2410c; }
-    .days-badge.upcoming { background: #fef9c3; color: #a16207; }
-    .days-badge.future   { background: #dcfce7; color: #15803d; }
-    .days-badge.past     { background: #f1f5f9; color: #94a3b8; }
+    .days-badge.today,
+    .days-badge.urgent   { background: rgba(239,68,68,0.15);  color: #ef4444; }
+    .days-badge.soon     { background: rgba(249,115,22,0.15); color: #f97316; }
+    .days-badge.upcoming { background: rgba(234,179,8,0.15);  color: #ca8a04; }
+    .days-badge.future   { background: rgba(34,197,94,0.15);  color: #16a34a; }
+    .days-badge.past     { background: rgba(148,163,184,0.12);color: #94a3b8; }
 
     /* ── main list ── */
     ul.main-list { list-style: none; }
 
     ul.main-list > li {
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid var(--border-light);
       padding: 8px 0;
     }
 
@@ -232,7 +281,7 @@
       gap: 8px;
     }
 
-    .item-text { flex: 1; font-size: 0.95rem; }
+    .item-text { flex: 1; font-size: 0.95rem; color: var(--text); }
 
     .btn-icon {
       background: none;
@@ -241,14 +290,14 @@
       font-size: 1rem;
       padding: 2px 5px;
       border-radius: 4px;
-      color: #bbb;
+      color: var(--text-faint);
       line-height: 1;
       transition: background 0.15s, color 0.15s;
     }
 
-    .btn-icon:hover        { color: #555; background: #f3f4f6; }
-    .btn-icon.delete:hover { color: #ef4444; background: #fff0f0; }
-    .btn-icon.edit:hover   { color: #2563eb; background: #eff6ff; }
+    .btn-icon:hover        { color: var(--text-muted); background: rgba(148,163,184,0.1); }
+    .btn-icon.delete:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
+    .btn-icon.edit:hover   { color: #3b82f6; background: rgba(59,130,246,0.1); }
 
     .btn-check {
       background: none;
@@ -276,15 +325,17 @@
     .edit-input {
       flex: 1;
       padding: 6px 10px;
-      border: 1.5px solid #2563eb;
+      border: 1.5px solid #3b82f6;
       border-radius: 6px;
       font-size: 0.95rem;
       outline: none;
+      background: var(--input-bg);
+      color: var(--input-text);
     }
 
     .btn-save {
       padding: 5px 12px;
-      background: #2563eb;
+      background: #3b82f6;
       color: #fff;
       border: none;
       border-radius: 6px;
@@ -294,7 +345,7 @@
       flex-shrink: 0;
     }
 
-    .btn-save:hover { background: #1d4ed8; }
+    .btn-save:hover { background: #2563eb; }
 
     /* ── sub-items ── */
     ul.sub-list {
@@ -308,10 +359,12 @@
       gap: 8px;
       padding: 4px 0;
       font-size: 0.88rem;
-      color: #555;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-light);
     }
 
-    ul.sub-list li .arrow    { color: #aaa; flex-shrink: 0; }
+    ul.sub-list li:last-child { border-bottom: none; }
+    ul.sub-list li .arrow    { color: var(--text-faint); flex-shrink: 0; }
     ul.sub-list li .sub-text { flex: 1; }
 
     .sub-input-row {
@@ -323,12 +376,15 @@
     .sub-input-row input {
       flex: 1;
       padding: 6px 10px;
-      border: 1.5px solid #e0e0e0;
+      border: 1.5px solid var(--border);
       border-radius: 6px;
       font-size: 0.88rem;
       outline: none;
+      background: var(--input-bg);
+      color: var(--input-text);
     }
 
+    .sub-input-row input::placeholder { color: var(--placeholder); }
     .sub-input-row input:focus { border-color: #94a3b8; }
 
     .sub-input-row button {
@@ -338,29 +394,29 @@
       font-size: 0.85rem;
       font-weight: 600;
       cursor: pointer;
-      background: #e2e8f0;
-      color: #334155;
+      background: var(--sub-btn-bg);
+      color: var(--sub-btn-text);
       transition: background 0.15s;
     }
 
-    .sub-input-row button:hover { background: #cbd5e1; }
+    .sub-input-row button:hover { filter: brightness(1.1); }
 
     /* ── finished section ── */
     .finished-group { margin-bottom: 20px; }
     .finished-group:last-child { margin-bottom: 0; }
 
     .finished-group-title {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #bbb;
+      letter-spacing: 0.07em;
+      color: var(--text-faint);
       margin-bottom: 8px;
     }
 
     .finished-item {
       padding: 7px 0;
-      border-bottom: 1px solid #f5f5f5;
+      border-bottom: 1px solid var(--border-light);
     }
 
     .finished-item:last-child { border-bottom: none; }
@@ -374,21 +430,21 @@
     .done-text {
       flex: 1;
       font-size: 0.93rem;
-      color: #aaa;
+      color: var(--text-muted);
       text-decoration: line-through;
     }
 
     .done-date {
       font-size: 0.75rem;
-      color: #ccc;
+      color: var(--text-faint);
       flex-shrink: 0;
       white-space: nowrap;
     }
 
     .btn-restore {
       background: none;
-      border: 1.5px solid #cbd5e1;
-      color: #94a3b8;
+      border: 1.5px solid var(--border);
+      color: var(--text-muted);
       border-radius: 6px;
       padding: 2px 8px;
       font-size: 0.75rem;
@@ -397,19 +453,19 @@
       transition: all 0.15s;
     }
 
-    .btn-restore:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
+    .btn-restore:hover { border-color: #3b82f6; color: #3b82f6; background: rgba(59,130,246,0.08); }
 
     ul.done-subs { list-style: none; margin: 2px 0 4px 8px; }
 
     ul.done-subs li {
       font-size: 0.82rem;
-      color: #aaa;
+      color: var(--text-faint);
       text-decoration: line-through;
       padding: 2px 0;
     }
 
-    .empty      { color: #bbb; font-size: 0.9rem; font-style: italic; }
-    .no-results { color: #bbb; font-size: 0.9rem; font-style: italic; }
+    .empty      { color: var(--text-faint); font-size: 0.9rem; font-style: italic; }
+    .no-results { color: var(--text-faint); font-size: 0.9rem; font-style: italic; }
   </style>
 </head>
 <body>
@@ -427,7 +483,10 @@
       </div>
       <div class="stats-export-row">
         <div class="stats-bar" id="stats-bar"></div>
-        <button class="export-btn" onclick="exportData()">↓ Export</button>
+        <div class="top-actions">
+          <button class="theme-btn" id="theme-btn" onclick="toggleTheme()">☀️</button>
+          <button class="export-btn" onclick="exportData()">↓ Export</button>
+        </div>
       </div>
     </div>
 
@@ -493,7 +552,7 @@
   </div>
 
   <script>
-    /* ── data init with full safety ── */
+    /* ── data init ── */
     let data;
     try {
       const saved = localStorage.getItem('veer-todo');
@@ -507,7 +566,7 @@
 
     const openSubs = new Set();
     let searchQuery = '';
-    let editing = null; // { type, i }
+    let editing = null;
 
     function save() {
       try { localStorage.setItem('veer-todo', JSON.stringify(data)); } catch(e) {}
@@ -516,14 +575,27 @@
     function escapeHtml(str) {
       if (!str) return '';
       return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#x27;');
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
     }
 
-    /* ── route render by type ── */
+    /* ── theme ── */
+    function toggleTheme() {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const next = isDark ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('veer-theme', next);
+      document.getElementById('theme-btn').textContent = next === 'dark' ? '☀️' : '🌙';
+    }
+
+    // set correct icon on load
+    (function() {
+      const t = document.documentElement.getAttribute('data-theme');
+      const btn = document.getElementById('theme-btn');
+      if (btn) btn.textContent = t === 'dark' ? '☀️' : '🌙';
+    })();
+
+    /* ── route render ── */
     function renderSection(type) {
       if (type === 'competition') renderCompetitions();
       else render(type);
@@ -532,9 +604,7 @@
     /* ── search ── */
     function handleSearch(val) {
       searchQuery = val.toLowerCase().trim();
-      render('task');
-      render('idea');
-      renderCompetitions();
+      render('task'); render('idea'); renderCompetitions();
     }
 
     function matchesSearch(item) {
@@ -546,7 +616,7 @@
 
     /* ── stats ── */
     function renderStats() {
-      const now      = new Date();
+      const now = new Date();
       const weekAgo  = new Date(now - 7  * 864e5);
       const monthAgo = new Date(now - 30 * 864e5);
       const week  = data.finished.filter(i => i.finishedAt && new Date(i.finishedAt) > weekAgo).length;
@@ -563,8 +633,7 @@
       const today = new Date(); today.setHours(0,0,0,0);
       const todays = data.competitions.filter(c => {
         if (!c.date) return false;
-        const d = new Date(c.date + 'T00:00:00');
-        return d.getTime() === today.getTime();
+        return new Date(c.date + 'T00:00:00').getTime() === today.getTime();
       });
       const el = document.getElementById('today-alert');
       if (!todays.length) { el.style.display = 'none'; return; }
@@ -576,20 +645,14 @@
     /* ── notifications ── */
     function requestNotifications() {
       if (!('Notification' in window)) { alert('Your browser does not support notifications.'); return; }
-      Notification.requestPermission().then(() => {
-        updateNotifBtn();
-        checkNotifications();
-      });
+      Notification.requestPermission().then(() => { updateNotifBtn(); checkNotifications(); });
     }
 
     function updateNotifBtn() {
       const btn = document.getElementById('notif-btn');
       if (!btn) return;
-      if (Notification.permission === 'granted') {
-        btn.textContent = '🔔 On'; btn.classList.add('on');
-      } else {
-        btn.textContent = '🔔 Notify me'; btn.classList.remove('on');
-      }
+      if (Notification.permission === 'granted') { btn.textContent = '🔔 On'; btn.classList.add('on'); }
+      else { btn.textContent = '🔔 Notify me'; btn.classList.remove('on'); }
     }
 
     function checkNotifications() {
@@ -622,12 +685,12 @@
       return `<span class="days-badge ${cls}">${label}</span>`;
     }
 
-    function priBadge(priority) {
-      if (!priority || priority === 'medium') return '';
-      return `<span class="pri-badge ${priority}">${priority === 'high' ? 'HIGH' : 'LOW'}</span>`;
+    function priBadge(p) {
+      if (!p || p === 'medium') return '';
+      return `<span class="pri-badge ${p}">${p === 'high' ? 'HIGH' : 'LOW'}</span>`;
     }
 
-    /* ── add task / idea ── */
+    /* ── add item ── */
     function addItem(type) {
       const input  = document.getElementById(`${type}-input`);
       const priSel = document.getElementById(`${type}-priority`);
@@ -637,12 +700,8 @@
       const item = { text, subs: [], priority: priSel ? priSel.value : 'medium' };
       if (dueEl) item.dueDate = dueEl.value;
       data[type + 's'].push(item);
-      input.value = '';
-      if (dueEl) dueEl.value = '';
-      save();
-      render(type);
-      renderStats();
-      input.focus();
+      input.value = ''; if (dueEl) dueEl.value = '';
+      save(); render(type); renderStats(); input.focus();
     }
 
     /* ── add competition ── */
@@ -653,42 +712,31 @@
       const text   = nameEl.value.trim();
       if (!text) return;
       data.competitions.push({ text, date: dateEl.value, subs: [], priority: priEl.value });
-      nameEl.value = '';
-      dateEl.value = '';
-      save();
-      renderCompetitions();
-      renderTodayAlert();
-      checkNotifications();
-      nameEl.focus();
+      nameEl.value = ''; dateEl.value = '';
+      save(); renderCompetitions(); renderTodayAlert(); checkNotifications(); nameEl.focus();
     }
 
-    /* ── inline edit ── */
+    /* ── edit ── */
     function startEdit(type, i) {
       editing = { type, i };
       renderSection(type);
-      setTimeout(() => {
-        const el = document.getElementById(`edit-${type}-${i}`);
-        if (el) { el.focus(); el.select(); }
-      }, 0);
+      setTimeout(() => { const el = document.getElementById(`edit-${type}-${i}`); if (el) { el.focus(); el.select(); } }, 0);
     }
 
     function saveEdit(type, i) {
-      const el   = document.getElementById(`edit-${type}-${i}`);
+      const el = document.getElementById(`edit-${type}-${i}`);
       const text = el ? el.value.trim() : '';
       if (text) {
         const arr = type === 'competition' ? data.competitions : data[type + 's'];
         arr[i].text = text;
         save();
       }
-      editing = null;
-      renderSection(type);
+      editing = null; renderSection(type);
     }
 
     function cancelEdit() {
       if (!editing) return;
-      const { type } = editing;
-      editing = null;
-      renderSection(type);
+      const { type } = editing; editing = null; renderSection(type);
     }
 
     /* ── sub-items ── */
@@ -696,8 +744,7 @@
       const key = `${type}-${i}`;
       openSubs.has(key) ? openSubs.delete(key) : openSubs.add(key);
       renderSection(type);
-      if (openSubs.has(key))
-        setTimeout(() => document.getElementById(`sub-text-${type}-${i}`)?.focus(), 0);
+      if (openSubs.has(key)) setTimeout(() => document.getElementById(`sub-text-${type}-${i}`)?.focus(), 0);
     }
 
     function addSub(type, i) {
@@ -708,16 +755,14 @@
       if (!Array.isArray(arr[i].subs)) arr[i].subs = [];
       arr[i].subs.push(text);
       input.value = '';
-      save();
-      renderSection(type);
+      save(); renderSection(type);
       setTimeout(() => document.getElementById(`sub-text-${type}-${i}`)?.focus(), 0);
     }
 
     function deleteSub(type, i, j) {
       const arr = type === 'competition' ? data.competitions : data[type + 's'];
       (arr[i].subs || []).splice(j, 1);
-      save();
-      renderSection(type);
+      save(); renderSection(type);
     }
 
     /* ── complete ── */
@@ -726,10 +771,7 @@
       const item = data[type + 's'].splice(i, 1)[0];
       openSubs.clear();
       data.finished.unshift({ ...item, subs: item.subs || [], type, finishedAt: new Date().toISOString() });
-      save();
-      render(type);
-      renderFinished();
-      renderStats();
+      save(); render(type); renderFinished(); renderStats();
     }
 
     function completeCompetition(i, btn) {
@@ -737,53 +779,30 @@
       const item = data.competitions.splice(i, 1)[0];
       openSubs.clear();
       data.finished.unshift({ ...item, subs: item.subs || [], type: 'competition', finishedAt: new Date().toISOString() });
-      save();
-      renderCompetitions();
-      renderFinished();
-      renderStats();
-      renderTodayAlert();
+      save(); renderCompetitions(); renderFinished(); renderStats(); renderTodayAlert();
     }
 
     /* ── delete ── */
     function deleteItem(type, i) {
-      data[type + 's'].splice(i, 1);
-      openSubs.clear();
-      save();
-      render(type);
+      data[type + 's'].splice(i, 1); openSubs.clear(); save(); render(type);
     }
 
     function deleteCompetition(i) {
-      data.competitions.splice(i, 1);
-      openSubs.clear();
-      save();
-      renderCompetitions();
-      renderTodayAlert();
+      data.competitions.splice(i, 1); openSubs.clear(); save(); renderCompetitions(); renderTodayAlert();
     }
 
-    /* ── restore from finished ── */
+    /* ── restore ── */
     function restoreItem(i) {
       const item = data.finished.splice(i, 1)[0];
-      const restored = {
-        text:     item.text,
-        subs:     item.subs || [],
-        priority: item.priority || 'medium'
-      };
+      const restored = { text: item.text, subs: item.subs || [], priority: item.priority || 'medium' };
       if (item.dueDate) restored.dueDate = item.dueDate;
       if (item.date)    restored.date    = item.date;
-      if (item.type === 'competition') {
-        data.competitions.push(restored);
-        renderCompetitions();
-        renderTodayAlert();
-      } else {
-        data[item.type + 's'].push(restored);
-        render(item.type);
-      }
-      save();
-      renderFinished();
-      renderStats();
+      if (item.type === 'competition') { data.competitions.push(restored); renderCompetitions(); renderTodayAlert(); }
+      else { data[item.type + 's'].push(restored); render(item.type); }
+      save(); renderFinished(); renderStats();
     }
 
-    /* ── build item HTML (shared) ── */
+    /* ── build item HTML ── */
     function buildItem(type, item, i) {
       const key       = `${type}-${i}`;
       const subOpen   = openSubs.has(key);
@@ -791,142 +810,93 @@
       const subs      = item.subs || [];
 
       if (isEditing) {
-        return `
-          <li>
-            <div class="item-row">
-              <input class="edit-input" id="edit-${type}-${i}"
-                     value="${escapeHtml(item.text)}" maxlength="200"
-                     onkeydown="if(event.key==='Enter') saveEdit('${type}',${i}); if(event.key==='Escape') cancelEdit()" />
-              <button class="btn-save" onclick="saveEdit('${type}',${i})">Save</button>
-              <button class="btn-icon" onclick="cancelEdit()" title="Cancel">&#x2715;</button>
-            </div>
-          </li>`;
+        return `<li><div class="item-row">
+          <input class="edit-input" id="edit-${type}-${i}" value="${escapeHtml(item.text)}" maxlength="200"
+                 onkeydown="if(event.key==='Enter') saveEdit('${type}',${i}); if(event.key==='Escape') cancelEdit()" />
+          <button class="btn-save" onclick="saveEdit('${type}',${i})">Save</button>
+          <button class="btn-icon" onclick="cancelEdit()" title="Cancel">&#x2715;</button>
+        </div></li>`;
       }
 
-      const dateHtml = type === 'competition'
-        ? daysBadge(item.date)
-        : (item.dueDate ? daysBadge(item.dueDate) : '');
-
-      const completeCall = type === 'competition'
-        ? `completeCompetition(${i},this)`
-        : `completeItem('${type}',${i},this)`;
-
-      const deleteCall = type === 'competition'
-        ? `deleteCompetition(${i})`
-        : `deleteItem('${type}',${i})`;
+      const dateHtml    = type === 'competition' ? daysBadge(item.date) : (item.dueDate ? daysBadge(item.dueDate) : '');
+      const completeCall = type === 'competition' ? `completeCompetition(${i},this)` : `completeItem('${type}',${i},this)`;
+      const deleteCall   = type === 'competition' ? `deleteCompetition(${i})` : `deleteItem('${type}',${i})`;
 
       const subItems = subs.map((sub, j) => `
-          <li>
-            <span class="arrow">↳</span>
-            <span class="sub-text">${escapeHtml(sub)}</span>
-            <button class="btn-icon delete" onclick="deleteSub('${type}',${i},${j})" title="Remove">&#x2715;</button>
-          </li>`).join('');
+        <li>
+          <span class="arrow">↳</span>
+          <span class="sub-text">${escapeHtml(sub)}</span>
+          <button class="btn-icon delete" onclick="deleteSub('${type}',${i},${j})" title="Remove">&#x2715;</button>
+        </li>`).join('');
 
       const subInput = subOpen ? `
-          <div class="sub-input-row">
-            <input id="sub-text-${type}-${i}" type="text" placeholder="Add sub-item..." maxlength="200"
-                   onkeydown="if(event.key==='Enter') addSub('${type}',${i})" />
-            <button onclick="addSub('${type}',${i})">Add</button>
-          </div>` : '';
+        <div class="sub-input-row">
+          <input id="sub-text-${type}-${i}" type="text" placeholder="Add sub-item..." maxlength="200"
+                 onkeydown="if(event.key==='Enter') addSub('${type}',${i})" />
+          <button onclick="addSub('${type}',${i})">Add</button>
+        </div>` : '';
 
-      return `
-          <li>
-            <div class="item-row">
-              <button class="btn-check" onclick="${completeCall}" title="Mark finished">✓</button>
-              ${priBadge(item.priority)}
-              <span class="item-text">${escapeHtml(item.text)}</span>
-              ${dateHtml}
-              <button class="btn-icon edit" onclick="startEdit('${type}',${i})" title="Edit">✎</button>
-              <button class="btn-icon" onclick="toggleSubInput('${type}',${i})" title="${subOpen ? 'Close' : 'Add sub-item'}">${subOpen ? '−' : '+'}</button>
-              <button class="btn-icon delete" onclick="${deleteCall}" title="Delete">&#x2715;</button>
-            </div>
-            ${subs.length > 0 ? `<ul class="sub-list">${subItems}</ul>` : ''}
-            ${subInput}
-          </li>`;
+      return `<li>
+        <div class="item-row">
+          <button class="btn-check" onclick="${completeCall}" title="Mark finished">✓</button>
+          ${priBadge(item.priority)}
+          <span class="item-text">${escapeHtml(item.text)}</span>
+          ${dateHtml}
+          <button class="btn-icon edit" onclick="startEdit('${type}',${i})" title="Edit">✎</button>
+          <button class="btn-icon" onclick="toggleSubInput('${type}',${i})" title="${subOpen ? 'Close' : 'Add sub-item'}">${subOpen ? '−' : '+'}</button>
+          <button class="btn-icon delete" onclick="${deleteCall}" title="Delete">&#x2715;</button>
+        </div>
+        ${subs.length ? `<ul class="sub-list">${subItems}</ul>` : ''}
+        ${subInput}
+      </li>`;
     }
 
     /* ── render tasks / ideas ── */
     function render(type) {
       const list  = document.getElementById(`${type}-list`);
       const items = data[type + 's'];
-
-      if (!items.length) {
-        list.innerHTML = `<li class="empty">Nothing here yet.</li>`;
-        return;
+      if (!items.length) { list.innerHTML = `<li class="empty">Nothing here yet.</li>`; return; }
+      if (!items.filter(matchesSearch).length) {
+        list.innerHTML = `<li class="no-results">No results for &ldquo;${escapeHtml(searchQuery)}&rdquo;</li>`; return;
       }
-
-      const matching = items.filter(matchesSearch);
-      if (!matching.length) {
-        list.innerHTML = `<li class="no-results">No results for &ldquo;${escapeHtml(searchQuery)}&rdquo;</li>`;
-        return;
-      }
-
-      list.innerHTML = items.map((item, i) =>
-        matchesSearch(item) ? buildItem(type, item, i) : ''
-      ).join('');
+      list.innerHTML = items.map((item, i) => matchesSearch(item) ? buildItem(type, item, i) : '').join('');
     }
 
     /* ── render competitions ── */
     function renderCompetitions() {
       const list  = document.getElementById('comp-list');
       const items = data.competitions;
-
-      if (!items.length) {
-        list.innerHTML = `<li class="empty">No competitions yet.</li>`;
-        return;
+      if (!items.length) { list.innerHTML = `<li class="empty">No competitions yet.</li>`; return; }
+      if (!items.filter(matchesSearch).length) {
+        list.innerHTML = `<li class="no-results">No results for &ldquo;${escapeHtml(searchQuery)}&rdquo;</li>`; return;
       }
-
-      const matching = items.filter(matchesSearch);
-      if (!matching.length) {
-        list.innerHTML = `<li class="no-results">No results for &ldquo;${escapeHtml(searchQuery)}&rdquo;</li>`;
-        return;
-      }
-
-      list.innerHTML = items.map((item, i) =>
-        matchesSearch(item) ? buildItem('competition', item, i) : ''
-      ).join('');
+      list.innerHTML = items.map((item, i) => matchesSearch(item) ? buildItem('competition', item, i) : '').join('');
     }
 
     /* ── render finished ── */
     function renderFinished() {
-      const list = document.getElementById('finished-list');
-
+      const list   = document.getElementById('finished-list');
       const groups = [
-        { type: 'task',        label: 'Finished Tasks',        color: '#2563eb' },
-        { type: 'competition', label: 'Finished Competitions',  color: '#ea580c' },
-        { type: 'idea',        label: 'Finished Ideas',         color: '#7c3aed' },
+        { type: 'task',        label: 'Finished Tasks' },
+        { type: 'competition', label: 'Finished Competitions' },
+        { type: 'idea',        label: 'Finished Ideas' },
       ];
-
       let html = '';
       for (const group of groups) {
-        const items = data.finished
-          .map((item, i) => ({ ...item, _idx: i }))
-          .filter(item => item.type === group.type);
-
-        html += `<div class="finished-group">
-          <h3 class="finished-group-title">${group.label}</h3>`;
-
-        if (!items.length) {
-          html += `<p class="empty">Nothing here yet.</p>`;
-        } else {
-          html += items.map(item => {
-            const subs = item.subs && item.subs.length
-              ? `<ul class="done-subs">${item.subs.map(s => `<li>↳ ${escapeHtml(s)}</li>`).join('')}</ul>`
-              : '';
-            const date = item.finishedAt
-              ? new Date(item.finishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-              : '';
-            return `
-              <div class="finished-item">
-                <div class="finished-row">
-                  <span class="done-text">${escapeHtml(item.text)}</span>
-                  ${date ? `<span class="done-date">${date}</span>` : ''}
-                  <button class="btn-restore" onclick="restoreItem(${item._idx})">↩ Restore</button>
-                </div>
-                ${subs}
-              </div>`;
-          }).join('');
-        }
+        const items = data.finished.map((item, i) => ({ ...item, _idx: i })).filter(i => i.type === group.type);
+        html += `<div class="finished-group"><h3 class="finished-group-title">${group.label}</h3>`;
+        if (!items.length) { html += `<p class="empty">Nothing here yet.</p>`; }
+        else html += items.map(item => {
+          const subs = item.subs && item.subs.length
+            ? `<ul class="done-subs">${item.subs.map(s => `<li>↳ ${escapeHtml(s)}</li>`).join('')}</ul>` : '';
+          const date = item.finishedAt
+            ? new Date(item.finishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+          return `<div class="finished-item"><div class="finished-row">
+            <span class="done-text">${escapeHtml(item.text)}</span>
+            ${date ? `<span class="done-date">${date}</span>` : ''}
+            <button class="btn-restore" onclick="restoreItem(${item._idx})">↩ Restore</button>
+          </div>${subs}</div>`;
+        }).join('');
         html += '</div>';
       }
       list.innerHTML = html;
@@ -935,49 +905,35 @@
     /* ── export ── */
     function exportData() {
       const lines = ["=== VEER'S TO-DO APP EXPORT ===", `Exported: ${new Date().toLocaleString()}`, ''];
-
       const section = (title, items, getExtra) => {
-        lines.push(`--- ${title.toUpperCase()} ---`);
-        if (!items.length) { lines.push('(empty)'); }
+        lines.push(`--- ${title} ---`);
+        if (!items.length) lines.push('(empty)');
         else items.forEach(it => {
-          const pri   = it.priority && it.priority !== 'medium' ? `[${it.priority.toUpperCase()}] ` : '';
-          const extra = getExtra(it);
-          lines.push(`${pri}${it.text}${extra}`);
+          const pri = it.priority && it.priority !== 'medium' ? `[${it.priority.toUpperCase()}] ` : '';
+          lines.push(`${pri}${it.text}${getExtra(it)}`);
           (it.subs || []).forEach(s => lines.push(`  ↳ ${s}`));
         });
         lines.push('');
       };
-
-      section('Tasks',        data.tasks,        t => t.dueDate ? ` (due: ${t.dueDate})` : '');
-      section('Competitions', data.competitions,  c => c.date    ? ` (${c.date})` : '');
-      section('Ideas',        data.ideas,         ()  => '');
-      section('Finished',     data.finished,      f  => f.finishedAt
-        ? ` [${f.type}] — done ${new Date(f.finishedAt).toLocaleDateString()}` : '');
-
+      section('TASKS',        data.tasks,       t => t.dueDate ? ` (due: ${t.dueDate})` : '');
+      section('COMPETITIONS', data.competitions, c => c.date    ? ` (${c.date})` : '');
+      section('IDEAS',        data.ideas,        () => '');
+      section('FINISHED',     data.finished,     f  => f.finishedAt ? ` [${f.type}] — done ${new Date(f.finishedAt).toLocaleDateString()}` : '');
       const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
       const url  = URL.createObjectURL(blob);
-      const a    = Object.assign(document.createElement('a'), {
-        href:     url,
-        download: `veer-todo-${new Date().toISOString().split('T')[0]}.txt`
-      });
-      a.click();
-      URL.revokeObjectURL(url);
+      const a    = Object.assign(document.createElement('a'), { href: url, download: `veer-todo-${new Date().toISOString().split('T')[0]}.txt` });
+      a.click(); URL.revokeObjectURL(url);
     }
 
-    /* ── enter key listeners ── */
+    /* ── listeners ── */
     document.getElementById('task-input').addEventListener('keydown', e => { if (e.key === 'Enter') addItem('task'); });
     document.getElementById('idea-input').addEventListener('keydown', e => { if (e.key === 'Enter') addItem('idea'); });
     document.getElementById('comp-input').addEventListener('keydown', e => { if (e.key === 'Enter') addCompetition(); });
 
     /* ── init ── */
-    updateNotifBtn();
-    checkNotifications();
-    render('task');
-    render('idea');
-    renderCompetitions();
-    renderFinished();
-    renderStats();
-    renderTodayAlert();
+    updateNotifBtn(); checkNotifications();
+    render('task'); render('idea'); renderCompetitions();
+    renderFinished(); renderStats(); renderTodayAlert();
   </script>
 
 </body>
