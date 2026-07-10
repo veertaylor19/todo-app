@@ -406,6 +406,32 @@
 
     .sub-input-row button:hover { filter: brightness(1.1); }
 
+    /* ── notes panel ── */
+    .notes-panel {
+      margin: 6px 0 4px 34px;
+    }
+
+    .notes-panel textarea {
+      width: 100%;
+      min-height: 70px;
+      padding: 8px 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-family: inherit;
+      line-height: 1.5;
+      resize: vertical;
+      outline: none;
+      background: var(--input-bg);
+      color: var(--input-text);
+      transition: border-color 0.2s;
+    }
+
+    .notes-panel textarea::placeholder { color: var(--placeholder); }
+    .notes-panel textarea:focus { border-color: #94a3b8; }
+
+    .btn-icon.notes-on { color: #f59e0b; }
+
     /* ── finished section ── */
     .finished-group { margin-bottom: 20px; }
     .finished-group:last-child { margin-bottom: 0; }
@@ -707,7 +733,8 @@
     if (!Array.isArray(data.finished))     data.finished     = Array.isArray(data.completed) ? [...data.completed] : [];
     save();
 
-    const openSubs = new Set();
+    const openSubs  = new Set();
+    const openNotes = new Set();
     let searchQuery = '';
     let editing = null;
 
@@ -867,8 +894,9 @@
 
     function matchesSearch(item) {
       if (!searchQuery) return true;
-      if (item.text && item.text.toLowerCase().includes(searchQuery)) return true;
-      if (item.subs && item.subs.some(s => s.toLowerCase().includes(searchQuery))) return true;
+      if (item.text  && item.text.toLowerCase().includes(searchQuery))                    return true;
+      if (item.subs  && item.subs.some(s => s.toLowerCase().includes(searchQuery)))       return true;
+      if (item.notes && item.notes.toLowerCase().includes(searchQuery))                   return true;
       return false;
     }
 
@@ -1010,6 +1038,19 @@
       const { type } = editing; editing = null; renderSection(type);
     }
 
+    /* ── notes ── */
+    function toggleNotes(type, i) {
+      const key = `${type}-${i}`;
+      openNotes.has(key) ? openNotes.delete(key) : openNotes.add(key);
+      renderSection(type);
+      if (openNotes.has(key)) setTimeout(() => document.getElementById(`notes-${type}-${i}`)?.focus(), 0);
+    }
+
+    function saveNoteInline(type, i, val) {
+      const arr = type === 'competition' ? data.competitions : data[type + 's'];
+      if (arr[i]) { arr[i].notes = val; save(); }
+    }
+
     /* ── sub-items ── */
     function toggleSubInput(type, i) {
       const key = `${type}-${i}`;
@@ -1092,6 +1133,9 @@
         </div></li>`;
       }
 
+      const noteKey      = `${type}-${i}`;
+      const noteOpen     = openNotes.has(noteKey);
+      const hasNotes     = !!(item.notes && item.notes.trim());
       const dateHtml     = type === 'competition' ? daysBadge(item.date) : (item.dueDate ? daysBadge(item.dueDate) : '');
       const recurHtml    = (item.recurrence && item.recurrence !== 'none') ? `<span class="recur-badge" title="Repeats ${item.recurrence}">🔁</span>` : '';
       const completeCall = type === 'competition' ? `completeCompetition(${i},this)` : `completeItem('${type}',${i},this)`;
@@ -1119,11 +1163,13 @@
           ${dateHtml}
           ${recurHtml}
           <button class="btn-icon edit" onclick="startEdit('${type}',${i})" title="Edit">✎</button>
+          <button class="btn-icon ${hasNotes || noteOpen ? 'notes-on' : ''}" onclick="toggleNotes('${type}',${i})" title="${noteOpen ? 'Close notes' : 'Add notes'}">📝</button>
           <button class="btn-icon" onclick="toggleSubInput('${type}',${i})" title="${subOpen ? 'Close' : 'Add sub-item'}">${subOpen ? '−' : '+'}</button>
           <button class="btn-icon delete" onclick="${deleteCall}" title="Delete">&#x2715;</button>
         </div>
         ${subs.length ? `<ul class="sub-list">${subItems}</ul>` : ''}
         ${subInput}
+        ${noteOpen ? `<div class="notes-panel"><textarea id="notes-${type}-${i}" placeholder="Add notes, links, context..." oninput="saveNoteInline('${type}',${i},this.value)">${escapeHtml(item.notes || '')}</textarea></div>` : ''}
       </li>`;
     }
 
