@@ -251,6 +251,8 @@
     .pri-badge.low      { background: rgba(59,130,246,0.15); color: #3b82f6; }
     .pri-badge.note     { background: rgba(148,163,184,0.15);color: #94a3b8; }
 
+    .recur-badge { font-size: 0.82rem; flex-shrink: 0; opacity: 0.6; cursor: default; }
+
     /* ── days-away badges ── */
     .days-badge {
       font-size: 0.72rem;
@@ -599,6 +601,13 @@
           <option value="note">Just Think About It</option>
         </select>
         <input id="task-due" type="date" />
+        <select id="task-recur">
+          <option value="none" selected>No repeat</option>
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+          <option value="yearly">Yearly</option>
+        </select>
         <button class="add-btn" onclick="addItem('task')">Add</button>
       </div>
       <ul class="main-list" id="task-list"></ul>
@@ -855,15 +864,27 @@
       return `<span class="pri-badge ${p}">${PRI_LABELS[p]}</span>`;
     }
 
+    /* ── recurring helpers ── */
+    function nextRecurDate(dateStr, recurrence) {
+      const d = dateStr ? new Date(dateStr + 'T00:00:00') : new Date();
+      if (recurrence === 'daily')   d.setDate(d.getDate() + 1);
+      if (recurrence === 'weekly')  d.setDate(d.getDate() + 7);
+      if (recurrence === 'monthly') d.setMonth(d.getMonth() + 1);
+      if (recurrence === 'yearly')  d.setFullYear(d.getFullYear() + 1);
+      return d.toISOString().split('T')[0];
+    }
+
     /* ── add item ── */
     function addItem(type) {
-      const input  = document.getElementById(`${type}-input`);
-      const priSel = document.getElementById(`${type}-priority`);
-      const dueEl  = document.getElementById(`${type}-due`);
-      const text   = input.value.trim();
+      const input   = document.getElementById(`${type}-input`);
+      const priSel  = document.getElementById(`${type}-priority`);
+      const dueEl   = document.getElementById(`${type}-due`);
+      const recurEl = document.getElementById(`${type}-recur`);
+      const text    = input.value.trim();
       if (!text) return;
-      const item = { text, subs: [], priority: priSel ? priSel.value : 'medium' };
-      if (dueEl) item.dueDate = dueEl.value;
+      const item = { text, subs: [], notes: '', priority: priSel ? priSel.value : 'medium' };
+      if (dueEl)   item.dueDate    = dueEl.value;
+      if (recurEl) item.recurrence = recurEl.value;
       data[type + 's'].push(item);
       input.value = ''; if (dueEl) dueEl.value = '';
       save(); render(type); renderStats(); input.focus();
@@ -936,6 +957,9 @@
       const item = data[type + 's'].splice(i, 1)[0];
       openSubs.clear();
       data.finished.unshift({ ...item, subs: item.subs || [], type, finishedAt: new Date().toISOString() });
+      if (type === 'task' && item.recurrence && item.recurrence !== 'none') {
+        data.tasks.push({ ...item, dueDate: nextRecurDate(item.dueDate, item.recurrence) });
+      }
       save(); render(type); renderFinished(); renderStats();
     }
 
@@ -983,7 +1007,8 @@
         </div></li>`;
       }
 
-      const dateHtml    = type === 'competition' ? daysBadge(item.date) : (item.dueDate ? daysBadge(item.dueDate) : '');
+      const dateHtml     = type === 'competition' ? daysBadge(item.date) : (item.dueDate ? daysBadge(item.dueDate) : '');
+      const recurHtml    = (item.recurrence && item.recurrence !== 'none') ? `<span class="recur-badge" title="Repeats ${item.recurrence}">🔁</span>` : '';
       const completeCall = type === 'competition' ? `completeCompetition(${i},this)` : `completeItem('${type}',${i},this)`;
       const deleteCall   = type === 'competition' ? `deleteCompetition(${i})` : `deleteItem('${type}',${i})`;
 
@@ -1007,6 +1032,7 @@
           ${priBadge(item.priority)}
           <span class="item-text">${escapeHtml(item.text)}</span>
           ${dateHtml}
+          ${recurHtml}
           <button class="btn-icon edit" onclick="startEdit('${type}',${i})" title="Edit">✎</button>
           <button class="btn-icon" onclick="toggleSubInput('${type}',${i})" title="${subOpen ? 'Close' : 'Add sub-item'}">${subOpen ? '−' : '+'}</button>
           <button class="btn-icon delete" onclick="${deleteCall}" title="Delete">&#x2715;</button>
