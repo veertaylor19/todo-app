@@ -1042,11 +1042,16 @@
     }
 
     function saveEdit(type, i) {
-      const el = document.getElementById(`edit-${type}-${i}`);
-      const text = el ? el.value.trim() : '';
+      const el     = document.getElementById(`edit-${type}-${i}`);
+      const dateEl = document.getElementById(`edit-date-${type}-${i}`);
+      const text   = el ? el.value.trim() : '';
       if (text) {
         const arr = type === 'competition' ? data.competitions : data[type + 's'];
         arr[i].text = text;
+        if (dateEl) {
+          if (type === 'competition') arr[i].date    = dateEl.value;
+          else                        arr[i].dueDate = dateEl.value;
+        }
         save();
       }
       editing = null; renderSection(type);
@@ -1178,9 +1183,14 @@
       const subs      = item.subs || [];
 
       if (isEditing) {
-        return `<li><div class="item-row">
+        const curDate = type === 'competition' ? (item.date || '') : (item.dueDate || '');
+        const dateField = (type === 'task' || type === 'competition')
+          ? `<input type="date" id="edit-date-${type}-${i}" value="${curDate}" style="padding:6px 8px;border:1.5px solid #3b82f6;border-radius:6px;background:var(--input-bg);color:var(--input-text);font-size:0.9rem;outline:none;" />`
+          : '';
+        return `<li><div class="item-row" style="flex-wrap:wrap;gap:6px;">
           <input class="edit-input" id="edit-${type}-${i}" value="${escapeHtml(item.text)}" maxlength="200"
                  onkeydown="if(event.key==='Enter') saveEdit('${type}',${i}); if(event.key==='Escape') cancelEdit()" />
+          ${dateField}
           <button class="btn-save" onclick="saveEdit('${type}',${i})">Save</button>
           <button class="btn-icon" onclick="cancelEdit()" title="Cancel">&#x2715;</button>
         </div></li>`;
